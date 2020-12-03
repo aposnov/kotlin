@@ -174,6 +174,9 @@ abstract class AbstractIncrementalCompilerRunnerTestBase<Args : CommonCompilerAr
             KtUsefulTestCase.assertExists(it)
         }
 
+        @JvmStatic
+        protected fun buildHistoryFile(cacheDir: File): File = File(cacheDir, "build-history.bin")
+
         private const val ARGUMENTS_FILE_NAME = "args.txt"
 
         private fun parseAdditionalArgs(testDir: File): List<String> {
