@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2019 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Copyright 2010-2020 JetBrains s.r.o. and Kotlin Programming Language contributors.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
@@ -15,10 +15,9 @@ import org.jetbrains.kotlin.ir.expressions.impl.IrConstImpl
 import org.jetbrains.kotlin.ir.expressions.impl.IrFunctionReferenceImpl
 import org.jetbrains.kotlin.ir.expressions.impl.IrPropertyReferenceImpl
 import org.jetbrains.kotlin.ir.symbols.IrClassSymbol
-import org.jetbrains.kotlin.ir.types.IrSimpleType
-import org.jetbrains.kotlin.ir.types.IrTypeProjection
+import org.jetbrains.kotlin.ir.symbols.IrScriptSymbol
+import org.jetbrains.kotlin.ir.types.*
 import org.jetbrains.kotlin.ir.types.impl.IrSimpleTypeImpl
-import org.jetbrains.kotlin.ir.types.makeNullable
 import org.jetbrains.kotlin.ir.util.transformFlat
 import org.jetbrains.kotlin.ir.visitors.IrElementTransformerVoid
 import org.jetbrains.kotlin.ir.visitors.transformChildrenVoid
@@ -37,7 +36,6 @@ class ScriptRemoveReceiverLowering(val context: CommonBackendContext) : FileLowe
 
     private fun IrExpression.nullConst() = IrConstImpl.constNull(startOffset, endOffset, type.makeNullable())
 
-    @OptIn(ObsoleteDescriptorBasedAPI::class)
     fun lower(script: IrScript): List<IrScript> {
         val transformer: IrElementTransformerVoid = object : IrElementTransformerVoid() {
             override fun visitCall(expression: IrCall): IrExpression {
@@ -59,6 +57,14 @@ class ScriptRemoveReceiverLowering(val context: CommonBackendContext) : FileLowe
                 return super.visitFieldAccess(expression)
             }
 
+            @OptIn(ObsoleteDescriptorBasedAPI::class)
+            private fun isScript(it: IrTypeArgument) =
+                false
+//                it.typeOrNull?.classifierOrNull is IrScriptSymbol
+//                if (it is IrTypeProjection && it.type is IrSimpleType && (it.type as IrSimpleType).classifier.descriptor is ScriptDescriptor)
+//                    true
+//                else false
+
             override fun visitFunctionReference(expression: IrFunctionReference): IrExpression {
                 expression.transformChildrenVoid(this)
 
@@ -66,9 +72,7 @@ class ScriptRemoveReceiverLowering(val context: CommonBackendContext) : FileLowe
                     expression.dispatchReceiver = null
 
                     val result = with(super.visitFunctionReference(expression) as IrFunctionReference) {
-                        val arguments = (type as IrSimpleType).arguments.filter {
-                            !(it is IrTypeProjection && it.type is IrSimpleType && (it.type as IrSimpleType).classifier.descriptor is ScriptDescriptor)
-                        }
+                        val arguments = (type as IrSimpleType).arguments.filterNot(::isScript)
                         IrFunctionReferenceImpl(
                             startOffset,
                             endOffset,
@@ -102,9 +106,7 @@ class ScriptRemoveReceiverLowering(val context: CommonBackendContext) : FileLowe
                     expression.dispatchReceiver = null
 
                     val result = with(super.visitPropertyReference(expression) as IrPropertyReference) {
-                        val arguments = (type as IrSimpleType).arguments.filter {
-                            !(it is IrTypeProjection && it.type is IrSimpleType && (it.type as IrSimpleType).classifier.descriptor is ScriptDescriptor)
-                        }
+                        val arguments = (type as IrSimpleType).arguments.filterNot(::isScript)
                         IrPropertyReferenceImpl(
                             startOffset,
                             endOffset,
