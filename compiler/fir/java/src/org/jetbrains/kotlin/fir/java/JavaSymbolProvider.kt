@@ -168,7 +168,6 @@ class JavaSymbolProvider(
                 javaTypeParameterStack.addStack(parentStack)
             }
         }
-        val methodMap = mutableMapOf<JavaMethod, FirJavaMethod>()
         val firJavaClass = buildJavaClass {
             source = (javaClass as? JavaElementImpl<*>)?.psi?.toFirPsiSourceElement()
             session = this@JavaSymbolProvider.session
@@ -220,9 +219,7 @@ class JavaSymbolProvider(
                     classIsAnnotation,
                     valueParametersForAnnotationConstructor,
                     dispatchReceiver
-                ).apply {
-                    methodMap[javaMethod] = this
-                }
+                )
             }
             val javaClassDeclaredConstructors = javaClass.constructors
             val constructorId = CallableId(classId.packageFqName, classId.relativeClassName, classId.shortClassName)
