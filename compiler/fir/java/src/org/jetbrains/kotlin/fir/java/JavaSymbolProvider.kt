@@ -191,7 +191,7 @@ class JavaSymbolProvider(
                 }
             }
 
-            val dispatchReceiver = classId.defaultType(typeParameters.map { it.symbol } )
+            val dispatchReceiver = classId.defaultType(typeParameters.map { it.symbol })
 
             status = FirResolvedDeclarationStatusImpl(
                 javaClass.visibility,
@@ -273,10 +273,6 @@ class JavaSymbolProvider(
             }
         )
         firJavaClass.addAnnotationsFrom(this@JavaSymbolProvider.session, javaClass, javaTypeParameterStack)
-        // NB: this is done here to unbind possible annotation cycle
-        for ((javaMethod, firJavaMethod) in methodMap) {
-            firJavaMethod.annotations.addAnnotationsFrom(session, javaMethod, javaTypeParameterStack)
-        }
         return firJavaClass
     }
 
@@ -330,7 +326,7 @@ class JavaSymbolProvider(
                 returnTypeRef = returnType.toFirJavaTypeRef(this@JavaSymbolProvider.session, javaTypeParameterStack)
                 isVar = !javaField.isFinal
                 isStatic = javaField.isStatic
-                annotationBuilder = { javaField.annotations.map { it.toFirAnnotationCall(session, javaTypeParameterStack) }}
+                annotationBuilder = { javaField.annotations.map { it.toFirAnnotationCall(session, javaTypeParameterStack) } }
                 initializer = convertJavaInitializerToFir(javaField.initializerValue)
 
                 if (!javaField.isStatic) {
@@ -376,6 +372,7 @@ class JavaSymbolProvider(
                     this@JavaSymbolProvider.session, index, javaTypeParameterStack,
                 )
             }
+            annotationBuilder = { javaMethod.annotations.map { it.toFirAnnotationCall(session, javaTypeParameterStack) } }
             status = FirResolvedDeclarationStatusImpl(
                 javaMethod.visibility,
                 javaMethod.modality
