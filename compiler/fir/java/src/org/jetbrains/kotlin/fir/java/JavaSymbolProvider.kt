@@ -456,12 +456,14 @@ class JavaSymbolProvider(
 
             if (javaConstructor != null) {
                 this.typeParameters += javaConstructor.typeParameters.convertTypeParameters(javaTypeParameterStack)
-                addAnnotationsFrom(this@JavaSymbolProvider.session, javaConstructor, javaTypeParameterStack)
+                annotationBuilder = { javaConstructor.annotations.map { it.toFirAnnotationCall(session, javaTypeParameterStack) } }
                 for ((index, valueParameter) in javaConstructor.valueParameters.withIndex()) {
                     valueParameters += valueParameter.toFirValueParameter(
                         this@JavaSymbolProvider.session, index, javaTypeParameterStack,
                     )
                 }
+            } else {
+                annotationBuilder = { emptyList() }
             }
         }.apply {
             containingClassAttr = ownerClassBuilder.symbol.toLookupTag()
@@ -485,6 +487,7 @@ class JavaSymbolProvider(
             visibility = Visibilities.Public
             isInner = false
             isPrimary = true
+            annotationBuilder = { emptyList() }
         }.apply {
             containingClassAttr = ownerClassBuilder.symbol.toLookupTag()
         }
